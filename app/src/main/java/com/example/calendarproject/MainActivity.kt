@@ -74,6 +74,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.liveData
+import androidx.navigation.compose.currentBackStackEntryAsState
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.room.*
@@ -135,7 +136,7 @@ fun AnimatedSplashScreen(navigateToMain: () -> Unit) {
         targetValue = if (startAnimation) 1.5f else 1f,
         animationSpec = keyframes {
             durationMillis = 2000 // Total duration of the animation
-            1.5f at 1000 // Zoom in to 1.5x at 1000ms
+            1.3f at 1000 // Zoom in to 1.5x at 1000ms
             1f at 2000 // Zoom back to 1x at 2000ms
         }
     )
@@ -156,7 +157,7 @@ fun AnimatedSplashScreen(navigateToMain: () -> Unit) {
             painter = painterResource(id = R.drawable.logo), // Replace with your logo
             contentDescription = "App Logo",
             modifier = Modifier
-                .size(500.dp)
+                .size(300.dp)
                 .alpha(alphaAnim.value)
                 .scale(scaleAnim.value) // Apply the zoom animation
         )
@@ -170,6 +171,11 @@ fun CalendarNotesApp(viewModel: MainViewModel) {
     val navController = rememberNavController()
     var showSplash by remember { mutableStateOf(true) }
     val context = LocalContext.current
+
+    // Observe the current back stack entry
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
+    Log.d("Navigation", "Current Route: $currentRoute") // Log the current route
 
     // Request notification permission after splash screen
     LaunchedEffect(showSplash) {
@@ -188,14 +194,38 @@ fun CalendarNotesApp(viewModel: MainViewModel) {
         }
     } else {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Calendar Notes") }) }
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Box(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            // Add the text
+                            Text(
+                                text = "Calendar Notes",
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        // Show the back arrow if the current route starts with "eventDetails/"
+                        if (currentRoute?.startsWith("eventDetails/") == true) {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowBack,
+                                    contentDescription = "Back"
+                                )
+                            }
+                        }
+                    }
+                )
+            }
         ) { padding ->
-            Box(modifier = Modifier.padding(padding)) { // Apply the padding here
+            Box(modifier = Modifier.padding(padding)) {
                 NavHost(navController, startDestination = "calendar") {
                     composable("calendar") { CalendarScreen(navController, viewModel) }
                     composable("eventDetails/{date}") { backStackEntry ->
                         val date = backStackEntry.arguments?.getString("date")
-                        date?.let { EventDetailsScreen(it, viewModel) }
+                        date?.let { EventDetailsScreen(it, viewModel, navController) }
                     }
                 }
             }
@@ -387,7 +417,7 @@ fun CalendarScreen(navController: NavController, viewModel: MainViewModel) {
 
 // Event Details Screen
 @Composable
-fun EventDetailsScreen(date: String, viewModel: MainViewModel) {
+fun EventDetailsScreen(date: String, viewModel: MainViewModel, navController: NavController) {
     var note by remember { mutableStateOf(TextFieldValue()) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     val context = LocalContext.current
