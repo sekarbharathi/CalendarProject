@@ -350,17 +350,17 @@ fun CalendarScreen(navController: NavController, viewModel: MainViewModel) {
             }
         }
 
-        // Display upcoming events
-        val upcomingEvents = allEvents.filter { it.date >= SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time) }
-        if (upcomingEvents.isNotEmpty()) {
+        // Display all events (including past events)
+        val allEventsList = allEvents
+        if (allEventsList.isNotEmpty()) {
             Text(
                 "My Notes:",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(top = 16.dp)
             )
             LazyColumn(modifier = Modifier.weight(1f)) {
-                items(upcomingEvents.size) { index ->
-                    val event = upcomingEvents[index]
+                items(allEventsList.size) { index ->
+                    val event = allEventsList[index]
                     Card(
                         modifier = Modifier
                             .padding(vertical = 4.dp)
@@ -468,51 +468,107 @@ fun EventDetailsScreen(date: String, viewModel: MainViewModel, navController: Na
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         Text("Events for $date", style = MaterialTheme.typography.titleLarge)
+
+        // Text Field with Gallery and Camera buttons inside
         OutlinedTextField(
             value = note,
             onValueChange = { note = it },
-            label = { Text("Notes") }
+            label = { Text("Notes") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            leadingIcon = {
+                // Display the selected image inside the text field
+                imageUri?.let { uri ->
+                    Image(
+                        painter = rememberAsyncImagePainter(uri),
+                        contentDescription = "Selected Image",
+                        modifier = Modifier
+                            .size(40.dp) // Set the size of the image
+                            .padding(end = 8.dp) // Add padding between the image and the text
+                    )
+                }
+            },
+            trailingIcon = {
+                Row(
+                    modifier = Modifier
+                        .padding(start = 16.dp, end = 8.dp), // Add padding to the left and right of the buttons
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Gallery Button
+                    IconButton(
+                        onClick = { imagePicker.launch("image/*") },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.gallery), // Replace with your gallery icon
+                            contentDescription = "Gallery"
+                        )
+                    }
+
+                    // Camera Button
+                    IconButton(
+                        onClick = {
+                            // Check if camera permission is granted
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                                // Permission already granted, launch the camera
+                                cameraLauncher.launch(photoUri)
+                            } else {
+                                // Request camera permission
+                                permissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.camera), // Replace with your camera icon
+                            contentDescription = "Camera"
+                        )
+                    }
+                }
+            }
         )
 
-        Button(onClick = { imagePicker.launch("image/*") }) {
-            Text(if (imageUri == null) "Attach Image from Gallery" else "Change Image from Gallery")
-        }
-
-        Button(onClick = {
-            // Check if camera permission is granted
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                // Permission already granted, launch the camera
-                cameraLauncher.launch(photoUri)
-            } else {
-                // Request camera permission
-                permissionLauncher.launch(Manifest.permission.CAMERA)
-            }
-        }) {
-            Text("Take Photo with Camera")
-        }
-
-        imageUri?.let { uri ->
-            Image(
-                painter = rememberAsyncImagePainter(uri),
-                contentDescription = "Selected Image",
-                modifier = Modifier.fillMaxWidth().height(200.dp)
-            )
-
-            Button(onClick = { imageUri = null }) {
+        // Remove Image button (wrapped and above Save Note button)
+        imageUri?.let {
+            Button(
+                onClick = { imageUri = null },
+                modifier = Modifier
+                    .wrapContentWidth() // Wrap the button width
+                    .align(Alignment.CenterHorizontally) // Center the button horizontally
+                    .padding(bottom = 8.dp) // Add padding below the button
+            ) {
                 Text("Remove Image")
             }
         }
 
-        Button(onClick = {
-            viewModel.updateEvent(date, note.text, imageUri?.toString())
-        }) {
-            Text("Save Changes")
+        // Save Note button (smaller size)
+        Button(
+            onClick = {
+                viewModel.updateEvent(date, note.text, imageUri?.toString())
+            },
+            modifier = Modifier
+                .wrapContentSize() // Make the button wrap its content
+                .align(Alignment.CenterHorizontally) // Center the button horizontally
+                .padding(bottom = 8.dp) // Add padding below the button
+        ) {
+            Text("Save Note")
         }
 
-        Button(onClick = { viewModel.fetchWeatherData(context, "Oulu", date) }) {
-            Text("Check Weather Alert")
+        // Weather button (smaller size)
+        Button(
+            onClick = { viewModel.fetchWeatherData(context, "Oulu", date) },
+            modifier = Modifier
+                .wrapContentSize() // Make the button wrap its content
+                .align(Alignment.CenterHorizontally) // Center the button horizontally
+        ) {
+            Text("Weather")
         }
 
         // Display the weather forecast
