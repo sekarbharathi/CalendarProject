@@ -688,8 +688,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         filteredForecast.forEach { item ->
             val time = item.dt_txt.substring(11, 16) // Extract time (HH:mm)
             val weatherDescription = item.weather.firstOrNull()?.description ?: "No data"
-            val temperature = item.main.temp
-            forecastString.append("$time: $weatherDescription, Temp: $temperature°C\n")
+            val temperatureKelvin = item.main.temp
+            val temperatureCelsius = temperatureKelvin - 273.15 // Convert Kelvin to Celsius
+            forecastString.append("$time: $weatherDescription, Temp: ${"%.2f".format(temperatureCelsius)}°C\n")
         }
 
         return forecastString.toString()
