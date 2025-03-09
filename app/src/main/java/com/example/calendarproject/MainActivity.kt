@@ -93,11 +93,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-//                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
-//            }
-//        }
-
+//             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+//        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+//    }
+//}
         createNotificationChannel(this)
 
         setContent {
@@ -110,9 +109,11 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channelId = "weather_alerts"
             val channelName = "Weather Alerts"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val importance = NotificationManager.IMPORTANCE_HIGH // Set importance to HIGH for pop-up notifications
             val channel = NotificationChannel(channelId, channelName, importance).apply {
                 description = "Channel for weather alerts"
+                enableVibration(true) // Enable vibration
+                setShowBadge(true) // Show badge on app icon
             }
 
             // Register the channel with the system
@@ -845,7 +846,8 @@ fun sendNotification(context: Context, message: String) {
         .setContentTitle("Weather Alert")
         .setContentText(message)
         .setSmallIcon(R.drawable.weather_alert_icon_vector) // Ensure this drawable exists
-        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        .setPriority(NotificationCompat.PRIORITY_HIGH) // Set priority to HIGH for pop-up
+        .setAutoCancel(true) // Automatically remove the notification when it is tapped
         .build()
 
     // Show the notification
